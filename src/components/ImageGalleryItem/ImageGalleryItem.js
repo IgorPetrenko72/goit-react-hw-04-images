@@ -21,7 +21,7 @@ ImageGalleryItem.propTypes = {
   onClickImg: PropTypes.func.isRequired,
   pictures: PropTypes.arrayOf(
     PropTypes.shape({
-      id: PropTypes.string.isRequired,
+      id: PropTypes.number.isRequired,
       largeImageURL: PropTypes.string.isRequired,
       webformatURL: PropTypes.string.isRequired,
       tags: PropTypes.string.isRequired,  

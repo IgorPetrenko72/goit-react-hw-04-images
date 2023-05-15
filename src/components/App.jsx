@@ -1,4 +1,4 @@
-import { Component } from "react";
+import { useEffect, useState } from "react";
 import Searchbar from "./Searchbar/Searchbar";
 import ImageGallery from "./ImageGallery/ImageGallery"
 import fetchPictures from "./ServiceApi/api";
@@ -7,74 +7,61 @@ import Button from "./Button/Button";
 import Modal from "./Modal/Modal";
 import css from './App.module.css'
 
+export const App = () => {
+  const [pictures, setPictures] = useState([]);
+  const [status, setStatus] = useState('hide');
+  const [showModal, setShowModal] = useState(false);
+  const [largeImageUrl, setLargeImageUrl] = useState('');
+  const [page, setPage] = useState(1);
+  const [query, setQuery] = useState('');
+  const [loadMore, setLoadMore] = useState(null);
 
-export class App extends Component {
-  state = {
-    pictures: [],
-    status: 'hide',
-    showModal: false,
-    largeImageUrl: '',
-    page: 1,
-    query: '',
-    loadMore: null,
+const getLargeImgUrl = imgUrl => {
+    setLargeImageUrl( imgUrl );
+    toggleModal();
   };
 
-getLargeImgUrl = imgUrl => {
-    this.setState({ largeImageUrl: imgUrl });
-    this.toggleModal();
+const toggleModal = () => {
+    setShowModal(!showModal);
   };
 
-  toggleModal = () => {
-    this.setState(state => ({
-      showModal: !state.showModal,
-    }));
+const searchResult = value => {
+  setQuery(value);
+  setPage(1);
+  setPictures([]);
+  setLoadMore(null);
+};
+
+const handleLoadMore = () => {
+    setPage(page + 1);
   };
 
-  searchResult = value => {
-    this.setState({ query: value, page: 1, pictures: [], loadMore: null });
-  };
-
-
- handleLoadMore = () => {
-    this.setState(prevState => ({
-      page: prevState.page + 1,
-    }));
-  };
-
-  componentDidUpdate(prevProps, prevState) {
-    const { page, query } = this.state;
-
-    if (
-      prevState.page !== this.state.page ||
-      prevState.query !== this.state.query
-    ) {
-      this.setState({ status: 'loading' });
-
-      fetchPictures(query, page)
-        .then(e =>
-          this.setState(prevState => ({
-            pictures: [...prevState.pictures, ...e.hits],
-            status: 'hide',
-            loadMore: 12 - e.hits.length,
-          }))
-        )
-        .catch(error => console.log(error));
+  useEffect(() => {
+    if (!query) {
+      return;
     }
-  }
+    setStatus('loading');
 
-render() {
-const { pictures, status, showModal, largeImageUrl, loadMore } = this.state;
+    fetchPictures(query, page)
+      .then(
+        e => {
+          setPictures(prevState => [...prevState, ...e.hits]);
+          setStatus('hide');
+          setLoadMore(12 - e.hits.length);
+        }
+      )
+      .catch(error => console.log(error));
+  }, [page, query]);
+  
   return (
     <div className={css.App}>
-
-      <Searchbar onSubmit={this.searchResult} />
+      <Searchbar onSubmit={searchResult} />
       {showModal && (
-        <Modal imgUrl={largeImageUrl} onClose={this.toggleModal} />
+        <Modal imgUrl={largeImageUrl} onClose={toggleModal} />
       )}
-      <ImageGallery pictures={pictures} onClick={this.getLargeImgUrl} />
+      <ImageGallery pictures={pictures} onClick={getLargeImgUrl} />
       {status === 'loading' && <Loader />}
-      {loadMore === 0 && <Button onClick={this.handleLoadMore} />}
+      {loadMore === 0 && <Button onClick={handleLoadMore} />}
     </div>
   );
-  } 
 };
